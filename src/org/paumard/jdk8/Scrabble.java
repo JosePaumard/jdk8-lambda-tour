@@ -20,6 +20,8 @@ package org.paumard.jdk8;
 
 import java.io.FileReader;
 import java.io.LineNumberReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -61,13 +63,15 @@ public class Scrabble {
     }
     
     public static void main(String... args) throws Exception {
-        
-        LineNumberReader scrabbleWordsReader = new LineNumberReader(new FileReader("files/ospd.txt")) ;
-        Stream<String> scrabbleWordsStream = scrabbleWordsReader.lines() ;
+
+        Stream<String> scrabbleWordsStream = Files.lines(
+            Paths.get("files", "ospd.txt")
+        ) ;
         Set<String> scrabbleWords = scrabbleWordsStream.map(String::toLowerCase).collect(Collectors.toSet()) ;
         
-        LineNumberReader shakespearWordsReader = new LineNumberReader(new FileReader("files/words.shakespeare.txt")) ;
-        Stream<String> shakespeareWordsStream = shakespearWordsReader.lines() ;
+        Stream<String> shakespeareWordsStream = Files.lines(
+            Paths.get("files", "words.shakespeare.txt")
+        ) ;
         Set<String> shakespeareWords = shakespeareWordsStream.map(String::toLowerCase).collect(Collectors.toSet()) ;
         
         System.out.println("# de mots autorisés au Scrabble : " + scrabbleWords.size()) ;
