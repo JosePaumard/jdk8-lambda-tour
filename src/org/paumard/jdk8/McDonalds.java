@@ -18,18 +18,13 @@
 
 package org.paumard.jdk8;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.LineNumberReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.paumard.model.McDonald;
 
 /**
@@ -66,15 +61,15 @@ public class McDonalds {
         
         System.out.println("# of McDos = " + mcdos.size()) ;
         
-        // Le nombre de villes qui possèdent un McDonald
-        long nVilles = 
+        // The number of cities that have a McDonald
+        long nTowns = 
         mcdos.stream()
                 .map(McDonald::city)
                 .collect(Collectors.toSet())
                 .size() ;
-        System.out.println("Nombre de villes qui possèdent un MacDonald : " + nVilles) ;
+        System.out.println("The number of cities that have a McDonald : " + nTowns) ;
         
-        // La ville qui possède le plus de MacDonald
+        // The city has the most MacDonald
         Map.Entry<String, Long> entry = 
         mcdos.stream()
                 .collect(
@@ -87,7 +82,7 @@ public class McDonalds {
                 .stream()
                 .max(Map.Entry.comparingByValue())
                 .get() ;
-        System.out.println("La ville qui possède le plus de MacDonalds : " + entry) ;
+        System.out.println("The city has the most MacDonald : " + entry) ;
         
     }
 }
