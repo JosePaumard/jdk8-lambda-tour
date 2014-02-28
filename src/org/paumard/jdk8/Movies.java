@@ -56,8 +56,7 @@ public class Movies {
                     String releaseYear = elements[0].substring(elements[0].toString().lastIndexOf("(") + 1, elements[0].toString().lastIndexOf(")")) ;
             
                     if (releaseYear.contains(",")) {
-                        // On ne prend pas en compte les films qui ont une
-                        // virgule dans le titre
+                        // Movies with a coma in their title are discarded
                         return ;
                     }
             
@@ -87,22 +86,22 @@ public class Movies {
         System.out.println("# actors = " + actors.size()) ;
         System.out.println("# movies = " + movies.size()) ;
         
-        // nombre d'années de production
+        // number of release years
         int annees = 
         movies.stream()
                 .map(movie -> movie.releaseYear())
                 .collect(Collectors.toSet())
                 .size() ;
-        System.err.println("Nombre d'années de production = " + annees) ;
+        System.err.println("Number of release years = " + annees) ;
         
-        // intervalle des années de production
+        // Min and max of release years
         IntSummaryStatistics stats = 
         movies.stream()
                 .mapToInt(movie -> movie.releaseYear())
                 .summaryStatistics() ;
-        System.err.println("De " + stats.getMin() + " à " + stats.getMax()) ;
+        System.err.println("From " + stats.getMin() + " to " + stats.getMax()) ;
         
-        // Film dans lequel le plus d'acteurs ont joué
+        // Movie in which the greatest number of actors have played
         Map.Entry<Integer, Long> entry1 = 
         movies.stream()
                 .collect(
@@ -115,9 +114,9 @@ public class Movies {
                 .stream()
                 .max(Map.Entry.comparingByValue())
                 .get() ;
-        System.out.println("Plus grand nombre d'acteurs et nombre de films : " + entry1) ;
+        System.out.println("Movie in which the greatest number of actors have played : " + entry1) ;
         
-        // Annee qui a vu le plus de films produits
+        // Year with the greatest number of movies released
         Map.Entry<Integer, Long> entry2 = 
         movies.stream()
                 .collect(
@@ -132,9 +131,9 @@ public class Movies {
                 .get() ;
         
         long debut = System.currentTimeMillis() ;
-        System.out.println("Année qui a vu le plus de films produits : " + entry2) ;
+        System.out.println("Year with the greatest number of movies released : " + entry2) ;
         
-        // Acteur qui a joué dans le plus de films
+        // Actor that played in the greatest number of movies
         Map.Entry<Actor, Long> entry3 = 
         actors.stream().parallel()
                 .collect(
@@ -147,9 +146,9 @@ public class Movies {
                 .stream()
                 .max(Map.Entry.comparingByValue())
                 .get() ;
-        System.out.println("Acteur qui a joué dans le plus de films : " + entry3) ;
+        System.out.println("Actor that played in the greatest number of movies : " + entry3) ;
         
-        // Acteur qui a joué dans le plus de films durant une année
+        // Actor that played in the greatest number of movies during a year
         Map.Entry<Actor, Map.Entry<Integer, Long>> entry4 = 
         actors.stream().parallel()
                 .collect(
@@ -173,7 +172,7 @@ public class Movies {
                 .stream()
                 .max(Comparator.comparing(entry -> entry.getValue().getValue()))
                 .get() ;
-        System.out.println("L'acteur qui a le plus joué durant une année : " + entry4) ;
+        System.out.println("Actor that played in the greatest number of movies during a year : " + entry4) ;
         
         
         long fin = System.currentTimeMillis() ;
