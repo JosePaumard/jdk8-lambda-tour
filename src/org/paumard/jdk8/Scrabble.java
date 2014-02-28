@@ -78,17 +78,17 @@ public class Scrabble {
         
         // mots utilisés par Shakespeare
         Long nWords1 = shakespeareWords.stream().count() ;
-        System.out.println("# de mots utilisés par Shakespeare  : " + nWords1) ;
+        System.out.println("# ofmots utilisés par Shakespeare  : " + nWords1) ;
         
-        // nombre de mots utilisés par Shakespeare et autorisés au Scrabble
+        // number of words used by Shakespeare and allowed at Scrabble
         long count = 
         shakespeareWords.stream()
                 .map(String::toLowerCase)
                 .filter(scrabbleWords::contains)
                 .count() ;
-        System.out.println("# mots utilisés par Shakespeare autorisés au scrabble = " + count);
+        System.out.println("# number of words used by Shakespeare and allowed at Scrabble = " + count);
         
-        // répartition des mots de shakespeare en fonction de leur taille
+        // words of Shakespeare grouped by their length
         Map<Integer, Long> map1 = 
         shakespeareWords.stream()
                 .collect(
@@ -97,9 +97,9 @@ public class Scrabble {
                                 Collectors.counting()
                         )
                 ) ;
-        System.out.println("Mots de shakespeare en fonction de leur taille = " + map1) ;
+        System.out.println("Words of Shakespeare grouped by their length = " + map1) ;
         
-        // mots de shakespeare de 16 lettres et plus
+        // words of Shakespeare of 16 letters and more
         Map<Integer, List<String>> map2 = 
         shakespeareWords.stream()
                 .filter(word -> word.length() > 15)
@@ -108,10 +108,10 @@ public class Scrabble {
                                 String::length
                         )
                 ) ;
-        System.out.println("Mots de Shakespeare de 16 lettres et plus = " + map2) ;
+        System.out.println("Words of Shakespeare of 16 letters and more = " + map2) ;
         
-        // répartition des mots de Shakespeare en fonction de leur score au Scrabble
-        // trié par score croissant
+        // words of Shakespeare grouped by their Scrabble score
+        // in ascending order
         Function<String, Integer> score = word -> word.chars().map(scrabbleLetterValueEN).sum() ;
         Map<Integer, Long> map3 =
         shakespeareWords.stream()
@@ -124,10 +124,10 @@ public class Scrabble {
                                 Collectors.counting()
                         )
                 ) ;
-        System.out.println("Répartition des mots de Shakespeare en fonction de leur score au Scrabble = " + map3) ;
+        System.out.println("Words of Shakespeare grouped by their Scrabble score = " + map3) ;
         
-        // mots de Shakespeare en fonction de leur score au Scrabble, pour les scores de 29 et plus
-        // trié par score croissant
+        // words of Shakespeare grouped by their Scrabble score, with a score greater than 29
+        // in ascending order
         Predicate<String> scoreGT28 = word -> score.apply(word) > 28 ;
         Map<Integer, List<String>> map4 =
         shakespeareWords.stream()
@@ -141,6 +141,6 @@ public class Scrabble {
                                 Collectors.toList()
                         )
                 ) ;
-        System.out.println("Mots de Shakespeare en fonction de leur score au Scrabble = " + map4) ;
+        System.out.println("Words of Shakespeare grouped by their Scrabble score = " + map4) ;
     }
 }
