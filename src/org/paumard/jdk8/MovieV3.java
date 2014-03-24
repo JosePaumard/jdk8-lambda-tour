@@ -96,7 +96,6 @@ public class MovieV3 {
 		System.out.println("# Key actors = " + keyActors.size()) ;
 
 		Supplier<Map<Actor, Map<Actor, AtomicLong>>> mapSupplier = () -> new ConcurrentHashMap<>() ;
-		AtomicLong nMaps = new AtomicLong() ;
 
 		Map<Actor, Map<Actor, AtomicLong>> map3 = 
 			keyActors.stream().parallel()
@@ -111,8 +110,7 @@ public class MovieV3 {
 							.forEach(actor2 -> {
 								Map<Actor, AtomicLong> subMap = map.computeIfAbsent(
 										actor, 
-										a -> { nMaps.incrementAndGet() ; 
-										return new ConcurrentHashMap<>() ; }
+										a -> new ConcurrentHashMap<>()
 								) ;
 								subMap.computeIfAbsent(
 										actor2, 
@@ -134,12 +132,12 @@ public class MovieV3 {
 									.forEach(
 										(Map.Entry<Actor, AtomicLong> entry21) -> { 
 											map11.merge(
-													entry21.getKey(), entry21.getValue(), 
-													(AtomicLong l1, AtomicLong l2) -> {
-														l1.addAndGet(l2.get()) ;
-														return l1 ;
-													}
-													) ;
+												entry21.getKey(), entry21.getValue(), 
+												(AtomicLong l1, AtomicLong l2) -> {
+													l1.addAndGet(l2.get()) ;
+													return l1 ;
+												}
+											) ;
 									}) ;
 							}
 						) ;
@@ -147,33 +145,32 @@ public class MovieV3 {
 			) ;
 
 		System.out.println("map 3 : " + map3.size()) ;
-		System.out.println("n maps = " + nMaps) ;
 
 		Map.Entry<Actor, Map.Entry<Actor, AtomicLong>> e = 
-		map3.entrySet().stream().parallel()
-		.filter(entry -> !entry.getValue().entrySet().isEmpty())
-		.collect(
-			Collectors.toMap(
-				entry -> entry.getKey(), 
-				entry -> entry.getValue().entrySet().stream()
-				.max(
-					Map.Entry.comparingByValue(
-							Comparator.comparingLong(AtomicLong::get)
+			map3.entrySet().stream().parallel()
+			.filter(entry -> !entry.getValue().entrySet().isEmpty())
+			.collect(
+				Collectors.toMap(
+					entry -> entry.getKey(), 
+					entry -> entry.getValue().entrySet().stream()
+					.max(
+						Map.Entry.comparingByValue(
+								Comparator.comparingLong(AtomicLong::get)
+						)
+					)
+					.get()
+				)
+			)
+			.entrySet()
+			.stream()
+			.max(
+				Map.Entry.comparingByValue(
+					Comparator.comparingLong(
+						entry -> entry.getValue().get()
 					)
 				)
-				.get()
 			)
-		)
-		.entrySet()
-		.stream()
-		.max(
-			Map.Entry.comparingByValue(
-				Comparator.comparingLong(
-					entry -> entry.getValue().get()
-				)
-			)
-		)
-		.get() ;
+			.get() ;
 		System.out.println("Most seen actor duo = " + e) ;
 
 		long fin = System.currentTimeMillis() ;
