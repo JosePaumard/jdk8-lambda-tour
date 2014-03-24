@@ -22,4 +22,14 @@ and whizzing are doable with blank letters, and let's change the computation
 of the score to take into account that the blank letters score 0. 
 
 Nice little problem, and it turns out that it is still solvable with a 
-map / filter / reduce approach, thus fully lambda based. Great !  
+map / filter / reduce approach, thus fully lambda based. Great !
+
+More on the Movie database example. 
+
+A nice question I had on this example is : "and how about the most seen duo
+of actors". This question is pretty straigthforward if your actors are in
+a DB with a basic SQL engine. With the Stream API, it's a bit trickier, and
+cant be solved using a brute force method, due to the number of cases to 
+evaluate. There's no Collector for that, to we have to build our own. And
+if we want to go parallel, we need to be careful about using concurrent
+structures.   
