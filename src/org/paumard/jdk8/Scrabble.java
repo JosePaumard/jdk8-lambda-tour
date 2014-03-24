@@ -18,16 +18,13 @@
 
 package org.paumard.jdk8;
 
-import java.io.FileReader;
-import java.io.LineNumberReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.BinaryOperator;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Predicate;
@@ -38,17 +35,25 @@ import java.util.stream.Stream;
  *
  * @author José
  */
+@SuppressWarnings("unused")
 public class Scrabble {
     
     private static final int [] scrabbleENScore = {
      // a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,  q, r, s, t, u, v, w, x, y,  z
         1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10} ;
     
+	private static final int [] scrabbleENDistribution = {
+     // a, b, c, d,  e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z
+        9, 2, 2, 1, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1} ;
     
     
     private static final int [] scrabbleFRScore = {
      // a,  b, c, d, e, f, g, h, i, j,  k, l, m, n, o, p, q, r, s, t, u, v,  w,  x,  y,  z
         1,  3, 3, 2, 1, 4, 2, 4, 1, 8, 10, 1, 2, 1, 1, 3, 8, 1, 1, 1, 1, 4, 10, 10, 10, 10} ;
+ 
+    private static final int [] scrabbleFRDistribution = {
+     // a, b, c, d,  e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z
+        9, 2, 2, 3, 15, 2, 2, 2, 8, 1, 1, 5, 3, 6, 6, 2, 1, 6, 6, 6, 6, 2, 1, 1, 1, 1} ;
     
     private static final IntUnaryOperator scrabbleLetterValueEN =
             c -> scrabbleENScore[c - 'a'] ;
@@ -62,7 +67,8 @@ public class Scrabble {
         return word.toLowerCase().chars().map(scrabbleLetterValueFR).sum() ;
     }
     
-    public static void main(String... args) throws Exception {
+    @SuppressWarnings("unchecked")
+	public static void main(String... args) throws Exception {
 
         Stream<String> scrabbleWordsStream = Files.lines(
             Paths.get("files", "ospd.txt")
@@ -142,5 +148,57 @@ public class Scrabble {
                         )
                 ) ;
         System.out.println("Words of Shakespeare grouped by their Scrabble score = " + map4) ;
+        
+        // histogram of the letters in a given word
+        Function<String, Map<Integer, Long>> lettersHisto = 
+            word -> word.chars()
+                        .mapToObj(Integer::new)
+                        .collect(
+                                Collectors.groupingBy(
+                                        Function.identity(),
+                                        Collectors.counting()
+                                )
+                        ) ;
+            
+        // score of a given word, taking into account that the given word
+        // might contain blank letters
+        Function<String, Integer> scoreWithBlanks = 
+            word -> lettersHisto.apply(word)
+                        .entrySet()
+                        .stream() // Map.Entry<letters, # used>
+                        .mapToInt(
+                           entry -> scrabbleENScore[entry.getKey() - 'a']*
+                                    (int)Long.min(entry.getValue(), scrabbleENDistribution[entry.getKey() - 'a'])
+                        )
+                        .sum() ;
+            
+        // number of blanks used for the given word
+        Function<String, Integer> blanksUsed = 
+                word -> lettersHisto.apply(word)
+                            .entrySet()
+                            .stream() // Map.Entry<letters, # used>
+                            .mapToInt(
+                               entry -> (int)Long.max(0L, entry.getValue() - scrabbleENDistribution[entry.getKey() - 'a'])
+                            )
+                            .sum() ;
+                
+        System.out.println("Number of blanks in [buzzards] = " + blanksUsed.apply("buzzards")) ;
+        System.out.println("Real score of [buzzards] = " + scoreWithBlanks.apply("buzzards")) ;
+        System.out.println("Number of blanks in [whizzing] = " + blanksUsed.apply("whizzing")) ;
+        System.out.println("Real score of [whizzing] = " + scoreWithBlanks.apply("whizzing")) ;
+                
+        // best words of Shakespeare and their scores
+        Map<Integer, List<String>> map = 
+                shakespeareWords.stream()
+                        .filter(scrabbleWords::contains)
+                        .filter(word -> blanksUsed.apply(word) <= 2L)
+                        .filter(word -> scoreWithBlanks.apply(word) >= 24)
+                        .collect(
+                                Collectors.groupingBy(
+                                		scoreWithBlanks, 
+                                        Collectors.toList()
+                                )
+                        ) ;
+        System.out.println("Best words of Shakespeare : " + map) ;
     }
 }
