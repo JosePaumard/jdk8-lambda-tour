@@ -34,8 +34,7 @@ import org.paumard.model.McDonald;
 public class McDonalds {
     
     public static void main(String... args) throws Exception {
-        
-        Stream<String> lines = Files.lines(Paths.get("files", "mcdonalds.csv")) ;
+        Stream<String> lines = Files.lines(Paths.get(McDonalds.class.getResource("/mcdonalds.csv").toURI()));
         List<McDonald> mcdos = lines.map(s -> {
             // -149.95038,61.13712,"McDonalds-Anchorage,AK","3828 W Dimond Blvd, Anchorage,AK, (907) 248-0597"
             // -72.84817,41.27988,"McDonalds-Branford,CT","424 W Main St, Branford,CT, (203) 488-9353"

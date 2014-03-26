@@ -45,7 +45,7 @@ public class Movies {
         
         Stream<String> lines = 
             Files.lines(
-                Paths.get("files", "movies-mpaa.txt"), 
+                Paths.get(Movies.class.getResource("/movies-mpaa.txt").toURI()),
                 Charset.forName("windows-1252")
             ) ;
         

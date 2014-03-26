@@ -71,12 +71,12 @@ public class Scrabble {
 	public static void main(String... args) throws Exception {
 
         Stream<String> scrabbleWordsStream = Files.lines(
-            Paths.get("files", "ospd.txt")
+            Paths.get(Scrabble.class.getResource("/ospd.txt").toURI())
         ) ;
         Set<String> scrabbleWords = scrabbleWordsStream.map(String::toLowerCase).collect(Collectors.toSet()) ;
         
         Stream<String> shakespeareWordsStream = Files.lines(
-            Paths.get("files", "words.shakespeare.txt")
+            Paths.get(Scrabble.class.getResource("/words.shakespeare.txt").toURI())
         ) ;
         Set<String> shakespeareWords = shakespeareWordsStream.map(String::toLowerCase).collect(Collectors.toSet()) ;
         
