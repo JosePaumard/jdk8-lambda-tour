@@ -4,6 +4,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IntSummaryStatistics;
 import java.util.Map;
@@ -12,10 +13,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javafx.util.Pair;
 import org.paumard.model.Actor;
 import org.paumard.model.Movie;
 
@@ -83,7 +86,59 @@ public class MovieV3 {
 			.summaryStatistics() ;
 		System.out.println("From " + stats.getMin() + " to " + stats.getMax()) ;
 
-		long debut = System.currentTimeMillis() ;
+        long debut = System.currentTimeMillis();
+
+        // Duo actor who played in more movies => simple and faster
+        // Time on my machine :
+        //  - New algo : ~100 seconds
+        //  - New algo old fashion : ~50 seconds (just foreach and map, no parallel)
+        //  - Old algo : 200 seconds
+        movies.stream().flatMap(
+                movie -> movie.actors().parallelStream().flatMap(actor1 ->
+                        movie.actors().stream().filter(actor2 -> !actor1.equals(actor2)).map(actor2 ->
+                                        new Pair<>(actor1, actor2)
+                        ))
+        ).collect(Collectors.groupingBy(
+                Function.identity(),
+                Collectors.counting()
+        )).entrySet().stream().max(Map.Entry.comparingByValue()).ifPresent(result ->
+                System.out.println("Most seen actor duo = " + result)
+        );
+
+        long fin = System.currentTimeMillis() ;
+        System.out.println("T = " + (fin - debut) + "ms");
+
+
+        debut = System.currentTimeMillis() ;
+        // Same algo with old fashion
+        Map<Pair<Actor, Actor>, AtomicLong> moviesByPairOfActors = new HashMap<>();
+        long max = 0;
+        Pair<Actor, Actor> bestPairOfActors = null;
+        for (Movie movie : movies) {
+            for (Actor actor1 : movie.actors()) {
+                for (Actor actor2 : movie.actors()) {
+                    if (!actor1.equals(actor2)) {
+                        Pair<Actor, Actor> pair = new Pair<>(actor1, actor2);
+                        if (!moviesByPairOfActors.containsKey(pair)) {
+                            moviesByPairOfActors.put(pair, new AtomicLong(0));
+                        }
+
+                        long count = moviesByPairOfActors.get(pair).incrementAndGet();
+                        if (count > max) {
+                            max = count;
+                            bestPairOfActors = pair;
+                        }
+                    }
+                }
+            }
+        }
+        System.out.println("Most seen actor duo = " + bestPairOfActors + "=" + max) ;
+        fin = System.currentTimeMillis() ;
+        moviesByPairOfActors.clear();
+        System.out.println("T = " + (fin - debut) + "ms");
+
+
+		debut = System.currentTimeMillis() ;
 
 		// Duo actor who played in more movies
 		NavigableSet<Actor> keyActors =
@@ -173,7 +228,7 @@ public class MovieV3 {
 			.get() ;
 		System.out.println("Most seen actor duo = " + e) ;
 
-		long fin = System.currentTimeMillis() ;
+		fin = System.currentTimeMillis() ;
 		System.out.println("T = " + (fin - debut) + "ms");
 	}
 }
