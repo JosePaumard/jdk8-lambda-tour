@@ -18,16 +18,21 @@
 
 package org.paumard.jdk8;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.IntUnaryOperator;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,40 +61,34 @@ public class Scrabble {
         9, 2, 2, 3, 15, 2, 2, 2, 8, 1, 1, 5, 3, 6, 6, 2, 1, 6, 6, 6, 6, 2, 1, 1, 1, 1} ;
     
     private static final IntUnaryOperator scrabbleLetterValueEN =
-            c -> scrabbleENScore[c - 'a'] ;
+            letter -> scrabbleENScore[letter - 'a'] ;
     
     private static final IntUnaryOperator scrabbleLetterValueFR =
-            c -> scrabbleFRScore[c - 'a'] ;
+            letter -> scrabbleFRScore[letter - 'a'] ;
     
     
-    public static int getScrabbleScore(String word) {
-        
-        return word.toLowerCase().chars().map(scrabbleLetterValueFR).sum() ;
-    }
-    
-    @SuppressWarnings("unchecked")
-	public static void main(String... args) throws Exception {
+	public static void main(String... args) {
 
-        Stream<String> scrabbleWordsStream = Files.lines(
-            Paths.get("files", "ospd.txt")
-        ) ;
-        Set<String> scrabbleWords = scrabbleWordsStream.map(String::toLowerCase).collect(Collectors.toSet()) ;
+		Set<String> scrabbleWords = null ;
+		Set<String> shakespeareWords = null ;
+        try (Stream<String> scrabbleWordsStream = Files.lines(Paths.get("files", "ospd.txt")) ;
+             Stream<String> shakespeareWordsStream = Files.lines(Paths.get("files", "words.shakespeare.txt")) ;
+        ) {
+	        scrabbleWords = scrabbleWordsStream.map(String::toLowerCase).collect(Collectors.toSet()) ;
+	        shakespeareWords = shakespeareWordsStream.map(String::toLowerCase).collect(Collectors.toSet()) ;
+        } catch (IOException e) {
+			e.printStackTrace();
+		}
         
-        Stream<String> shakespeareWordsStream = Files.lines(
-            Paths.get("files", "words.shakespeare.txt")
-        ) ;
-        Set<String> shakespeareWords = shakespeareWordsStream.map(String::toLowerCase).collect(Collectors.toSet()) ;
+        System.out.println("# of words in the Scrabble dictionnary : " + scrabbleWords.size()) ;
         
-        System.out.println("# de mots autorisés au Scrabble : " + scrabbleWords.size()) ;
-        
-        // mots utilisés par Shakespeare
+        //  number of words used by Shakespeare
         Long nWords1 = shakespeareWords.stream().count() ;
-        System.out.println("# ofmots utilisés par Shakespeare  : " + nWords1) ;
+        System.out.println("# of words used by Shakespeare  : " + nWords1) ;
         
         // number of words used by Shakespeare and allowed at Scrabble
         long count = 
         shakespeareWords.stream()
-                .map(String::toLowerCase)
                 .filter(scrabbleWords::contains)
                 .count() ;
         System.out.println("# number of words used by Shakespeare and allowed at Scrabble = " + count);
@@ -98,10 +97,11 @@ public class Scrabble {
         Map<Integer, Long> map1 = 
         shakespeareWords.stream()
                 .collect(
-                        Collectors.groupingBy(
-                                String::length, 
-                                Collectors.counting()
-                        )
+                    Collectors.groupingBy(
+                		String::length, 
+                        () -> new TreeMap<Integer, Long>(Comparator.<Integer>naturalOrder().reversed()),  
+                        Collectors.counting()
+                    )
                 ) ;
         System.out.println("Words of Shakespeare grouped by their length = " + map1) ;
         
@@ -110,29 +110,30 @@ public class Scrabble {
         shakespeareWords.stream()
                 .filter(word -> word.length() > 15)
                 .collect(
-                        Collectors.groupingBy(
-                                String::length
-                        )
+                    Collectors.groupingBy(
+                        String::length, 
+                        () -> new TreeMap<Integer, List<String>>(Comparator.<Integer>naturalOrder().reversed()), 
+                        Collectors.toList()
+                    )
                 ) ;
         System.out.println("Words of Shakespeare of 16 letters and more = " + map2) ;
         
-        // words of Shakespeare grouped by their Scrabble score
-        // in ascending order
+        // # of words of Shakespeare grouped by their Scrabble score
+        // in descending order
         Function<String, Integer> score = word -> word.chars().map(scrabbleLetterValueEN).sum() ;
         Map<Integer, Long> map3 =
         shakespeareWords.stream()
-                .map(String::toLowerCase)
                 .filter(scrabbleWords::contains)
                 .collect(
-                        Collectors.groupingBy(
-                                score, 
-                                TreeMap::new,
-                                Collectors.counting()
-                        )
+                    Collectors.groupingBy(
+                        score, 
+                        () -> new TreeMap<Integer, Long>(Comparator.<Integer>naturalOrder().reversed()),
+                        Collectors.counting()
+                    )
                 ) ;
-        System.out.println("Words of Shakespeare grouped by their Scrabble score = " + map3) ;
+        System.out.println("# of words of Shakespeare grouped by their Scrabble score = " + map3) ;
         
-        // words of Shakespeare grouped by their Scrabble score, with a score greater than 29
+        // words of Shakespeare grouped by their Scrabble score, with a score greater than 28
         // in ascending order
         Predicate<String> scoreGT28 = word -> score.apply(word) > 28 ;
         Map<Integer, List<String>> map4 =
@@ -141,25 +142,37 @@ public class Scrabble {
                 .filter(scrabbleWords::contains)
                 .filter(scoreGT28)
                 .collect(
-                        Collectors.groupingBy(
-                                score, 
-                                TreeMap::new,
-                                Collectors.toList()
-                        )
+                    Collectors.groupingBy(
+                        score, 
+                        TreeMap::new,
+                        Collectors.toList()
+                    )
                 ) ;
         System.out.println("Words of Shakespeare grouped by their Scrabble score = " + map4) ;
         
         // histogram of the letters in a given word
         Function<String, Map<Integer, Long>> lettersHisto = 
             word -> word.chars()
-                        .mapToObj(Integer::new)
+                        .boxed()
                         .collect(
-                                Collectors.groupingBy(
-                                        Function.identity(),
-                                        Collectors.counting()
-                                )
+                            Collectors.groupingBy(
+                                Function.identity(),
+                                Collectors.counting()
+                            )
                         ) ;
             
+        // Predicate to check if a word can be written without the use of blanks
+        Predicate<String> noBlank = 
+            word -> lettersHisto.apply(word)
+                        .entrySet()
+                        .stream() // Map.Entry<letters, # used>
+                        .allMatch(
+                            entry -> entry.getValue() <= 
+                            		 scrabbleENDistribution[entry.getKey() - 'a']
+                        ) ;
+        System.out.println("Can we write buzzards without blanks? " + noBlank.test("buzzards")) ;
+        System.out.println("Can we write whizzings without blanks? " + noBlank.test("whizzings")) ;
+                        
         // score of a given word, taking into account that the given word
         // might contain blank letters
         Function<String, Integer> scoreWithBlanks = 
@@ -194,11 +207,41 @@ public class Scrabble {
                         .filter(word -> blanksUsed.apply(word) <= 2L)
                         .filter(word -> scoreWithBlanks.apply(word) >= 24)
                         .collect(
-                                Collectors.groupingBy(
-                                		scoreWithBlanks, 
-                                        Collectors.toList()
-                                )
+                            Collectors.groupingBy(
+                        		scoreWithBlanks, 
+                                Collectors.toList()
+                            )
                         ) ;
         System.out.println("Best words of Shakespeare : " + map) ;
+        
+        // best word that Shakespeare could have played as a first move
+        // scoring function
+        Function<String, Integer> scoreOnBoard = 
+        		word -> 2*( // the first word scores double at Scrabble 
+	        				scoreWithBlanks.apply(word) + 
+	        				Stream.of(
+	        				    word.chars().skip(4), 
+	        				    word.chars().limit(Integer.max(0, word.length() - 4))
+	        				)
+	        				.flatMapToInt(Function.identity())
+	        				.map(scrabbleLetterValueEN)
+	        				.max()
+	        				.orElse(0)
+	        			) +
+	        			(word.length() == 7 ? 50 : 0) ; // there is a 50 pts bonus for a 7 letters word
+        Map<Integer, List<String>> mapOnBoard = 
+                shakespeareWords.stream()
+                        .filter(scrabbleWords::contains)
+                        .filter(word -> blanksUsed.apply(word) <= 2L)
+                        .filter(word -> scoreOnBoard.apply(word ) >= 114)
+                        .collect(
+                            Collectors.groupingBy(
+                        		scoreOnBoard, 
+                        		() -> new TreeMap<Integer, List<String>>(Comparator.<Integer>naturalOrder().reversed()),
+                                Collectors.toList()
+                            )
+                        ) ;
+         System.out.println("Best words of Shakespeare played as first move : " + mapOnBoard) ;
+        
     }
 }
